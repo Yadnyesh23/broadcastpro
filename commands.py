@@ -10,13 +10,11 @@ def register_commands(app):
         welcome_text = get_welcome_message()
         await message.reply_text(welcome_text)
 
-    
-# Create a directory for saving photos (if it doesn't already exist)
-PHOTO_STORAGE_DIR = "photos"
-if not os.path.exists(PHOTO_STORAGE_DIR):
-    os.makedirs(PHOTO_STORAGE_DIR)
+    # Create a directory for saving photos (if it doesn't already exist)
+    PHOTO_STORAGE_DIR = "photos"
+    if not os.path.exists(PHOTO_STORAGE_DIR):
+        os.makedirs(PHOTO_STORAGE_DIR)
 
-def register_commands(app):
     @app.on_message(filters.private & filters.command("start"))
     async def start(client, message):
         add_user(message.chat.id)
@@ -67,8 +65,6 @@ def register_commands(app):
             await message.reply_text("✅ Welcome video updated.")
     
     # Keep other commands as they are...
-       
-
     @app.on_message(filters.private & filters.command("broadcast"))
     async def broadcast(client, message):
         if not is_admin(message.chat.id):
@@ -104,7 +100,7 @@ def register_commands(app):
             await message.reply_text(f"✅ User {new_admin_id} is now an admin!")
         except ValueError:
             await message.reply_text("❌ Invalid user ID format.")
-
+    
     @app.on_message(filters.private & filters.command("removeadmin"))
     async def remove_admin_command(client, message):
         if not is_admin(message.chat.id):
@@ -122,7 +118,7 @@ def register_commands(app):
             await message.reply_text(f"✅ User {admin_id} is no longer an admin!")
         except ValueError:
             await message.reply_text("❌ Invalid user ID format.")
-
+    
     @app.on_message(filters.private & filters.command("listadmins"))
     async def list_admins(client, message):
         if not is_admin(message.chat.id):
@@ -134,3 +130,22 @@ def register_commands(app):
         
         admin_list = "\n".join([str(admin["user_id"]) for admin in admins])
         await message.reply_text(f"List of Admins:\n{admin_list}")
+
+    @app.on_message(filters.private & filters.command("commands"))
+    async def show_commands(client, message):
+        if not is_admin(message.chat.id):
+            return await message.reply_text("❌ You are not an admin.")
+        
+        commands_list = """
+        Available Commands:
+        
+        /start - Start the bot and receive the welcome message.
+        /setwelcome - Set the welcome message (text, photo, audio, video).
+        /broadcast - Broadcast a message to all users.
+        /addadmin - Add a new admin.
+        /removeadmin - Remove an existing admin.
+        /listadmins - List all admins.
+        /commands - Show available commands for admins.
+        """
+        
+        await message.reply_text(commands_list)
