@@ -9,10 +9,11 @@ def register_commands(app):
         welcome_text = get_welcome_message()
         await message.reply_text(welcome_text)
 
-    from pyrogram import Client, filters
-from pyrogram.types import Message
-from database import add_user, get_users, set_welcome_message, get_welcome_message, add_admin, remove_admin, is_admin, get_admins
-import os
+    
+# Create a directory for saving photos (if it doesn't already exist)
+PHOTO_STORAGE_DIR = "photos"
+if not os.path.exists(PHOTO_STORAGE_DIR):
+    os.makedirs(PHOTO_STORAGE_DIR)
 
 def register_commands(app):
     @app.on_message(filters.private & filters.command("start"))
@@ -20,21 +21,15 @@ def register_commands(app):
         add_user(message.chat.id)
         welcome_message = get_welcome_message()
 
-        # Check if the welcome message is a file ID (photo, audio, video)
-        if welcome_message:
-            if welcome_message.startswith("photo_"):
-                photo_file_id = welcome_message.split("_")[1]
-                await message.reply_photo(photo_file_id)  # Send the photo by file_id
-            elif welcome_message.startswith("audio_"):
-                audio_file_id = welcome_message.split("_")[1]
-                await message.reply_audio(audio_file_id)  # Send the audio by file_id
-            elif welcome_message.startswith("video_"):
-                video_file_id = welcome_message.split("_")[1]
-                await message.reply_video(video_file_id)  # Send the video by file_id
-            else:
-                await message.reply_text(welcome_message)  # Send as text
+        # Check if the welcome message is a photo path (not file_id)
+        if welcome_message and welcome_message.startswith("photo_"):
+            photo_file_path = welcome_message.split("_")[1]
+            try:
+                await message.reply_photo(photo_file_path)  # Send the photo by file path
+            except ValueError:
+                await message.reply_text("❌ Failed to send the photo. The file might have been removed.")
         else:
-            await message.reply_text("Welcome! How can I assist you?")
+            await message.reply_text(welcome_message)  # Send as text
 
     @app.on_message(filters.private & filters.command("setwelcome"))
     async def set_welcome(client, message: Message):
@@ -49,10 +44,15 @@ def register_commands(app):
         
         # If it's a photo
         elif message.photo:
-            photo_file_id = message.photo.file_id
-            set_welcome_message(f"photo_{photo_file_id}")  # Store the file ID with prefix
+            # Download the photo to the server
+            photo = message.photo
+            downloaded_photo_path = os.path.join(PHOTO_STORAGE_DIR, f"{photo.file_id}.jpg")
+            await message.download(downloaded_photo_path)
+            
+            # Save the path of the downloaded photo
+            set_welcome_message(f"photo_{downloaded_photo_path}")
             await message.reply_text("✅ Welcome photo updated!")
-        
+
         # If it's an audio message
         elif message.audio:
             audio_file_id = message.audio.file_id
@@ -65,7 +65,8 @@ def register_commands(app):
             set_welcome_message(f"video_{video_file_id}")  # Store the file ID with prefix
             await message.reply_text("✅ Welcome video updated.")
     
-    # You can keep the other commands as they are...
+    # Keep other commands as they are...
+       
 
     @app.on_message(filters.private & filters.command("broadcast"))
     async def broadcast(client, message):
