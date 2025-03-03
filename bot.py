@@ -1,4 +1,5 @@
-from pyrogram import Client, filters
+from pyrogram import Client
+from commands import register_commands
 from dotenv import load_dotenv
 import os
 
@@ -10,9 +11,7 @@ bot_token = os.getenv("BOT_TOKEN")
 
 app = Client("bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
-@app.on_message(filters.command("start"))
-def start(client, message):
-    message.reply("Hello! I'm your bot!")
+register_commands(app)
 
 if __name__ == "__main__":
     print("Bot is running...")
