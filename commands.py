@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 from database import add_user, get_users, set_welcome_message, get_welcome_message, add_admin, remove_admin, is_admin, get_admins
 import os
+from pyrogram.types import Message
 
 def register_commands(app):
     @app.on_message(filters.private & filters.command("start"))
