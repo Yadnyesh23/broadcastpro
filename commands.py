@@ -9,40 +9,63 @@ def register_commands(app):
         welcome_text = get_welcome_message()
         await message.reply_text(welcome_text)
 
+    from pyrogram import Client, filters
+from pyrogram.types import Message
+from database import add_user, get_users, set_welcome_message, get_welcome_message, add_admin, remove_admin, is_admin, get_admins
+import os
+
+def register_commands(app):
+    @app.on_message(filters.private & filters.command("start"))
+    async def start(client, message):
+        add_user(message.chat.id)
+        welcome_message = get_welcome_message()
+
+        # Check if the welcome message is a file ID (photo, audio, video)
+        if welcome_message:
+            if welcome_message.startswith("photo_"):
+                photo_file_id = welcome_message.split("_")[1]
+                await message.reply_photo(photo_file_id)  # Send the photo by file_id
+            elif welcome_message.startswith("audio_"):
+                audio_file_id = welcome_message.split("_")[1]
+                await message.reply_audio(audio_file_id)  # Send the audio by file_id
+            elif welcome_message.startswith("video_"):
+                video_file_id = welcome_message.split("_")[1]
+                await message.reply_video(video_file_id)  # Send the video by file_id
+            else:
+                await message.reply_text(welcome_message)  # Send as text
+        else:
+            await message.reply_text("Welcome! How can I assist you?")
+
     @app.on_message(filters.private & filters.command("setwelcome"))
-    async def set_welcome(client, message):
+    async def set_welcome(client, message: Message):
         if not is_admin(message.chat.id):
             return await message.reply_text("❌ You are not an admin.")
         
-        if len(message.command) < 2 and not any([message.photo, message.audio, message.video]):
-            return await message.reply_text("Usage: /setwelcome <new message>, or send a photo, audio, or video.")
-        
         # If it's a text message
-        if len(message.command) >= 2:
+        if len(message.command) >= 2 and not any([message.photo, message.audio, message.video]):
             new_message = " ".join(message.command[1:])
             set_welcome_message(new_message)
             await message.reply_text("✅ Welcome message updated!")
         
         # If it's a photo
         elif message.photo:
-            # Handle the photo (e.g., save or store it)
             photo_file_id = message.photo.file_id
-            set_welcome_message(photo_file_id)  # You can store the file ID or download the file
+            set_welcome_message(f"photo_{photo_file_id}")  # Store the file ID with prefix
             await message.reply_text("✅ Welcome photo updated!")
-
+        
         # If it's an audio message
         elif message.audio:
-            # Handle the audio (e.g., save or store it)
             audio_file_id = message.audio.file_id
-            set_welcome_message(audio_file_id)  # You can store the file ID or download the file
+            set_welcome_message(f"audio_{audio_file_id}")  # Store the file ID with prefix
             await message.reply_text("✅ Welcome audio updated.")
         
         # If it's a video message
         elif message.video:
-            # Handle the video (e.g., save or store it)
             video_file_id = message.video.file_id
-            set_welcome_message(video_file_id)  # You can store the file ID or download the file
+            set_welcome_message(f"video_{video_file_id}")  # Store the file ID with prefix
             await message.reply_text("✅ Welcome video updated.")
+    
+    # You can keep the other commands as they are...
 
     @app.on_message(filters.private & filters.command("broadcast"))
     async def broadcast(client, message):
