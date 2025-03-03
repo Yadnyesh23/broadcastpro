@@ -10,25 +10,6 @@ def register_commands(app):
         welcome_text = get_welcome_message()
         await message.reply_text(welcome_text)
 
-    # Create a directory for saving photos (if it doesn't already exist)
-    PHOTO_STORAGE_DIR = "photos"
-    if not os.path.exists(PHOTO_STORAGE_DIR):
-        os.makedirs(PHOTO_STORAGE_DIR)
-
-    @app.on_message(filters.private & filters.command("start"))
-    async def start(client, message):
-        add_user(message.chat.id)
-        welcome_message = get_welcome_message()
-
-        # Check if the welcome message is a photo path (not file_id)
-        if welcome_message and welcome_message.startswith("photo_"):
-            photo_file_path = welcome_message.split("_")[1]
-            try:
-                await message.reply_photo(photo_file_path)  # Send the photo by file path
-            except ValueError:
-                await message.reply_text("❌ Failed to send the photo. The file might have been removed.")
-        else:
-            await message.reply_text(welcome_message)  # Send as text
 
     @app.on_message(filters.private & filters.command("setwelcome"))
     async def set_welcome(client, message: Message):
@@ -45,7 +26,7 @@ def register_commands(app):
         elif message.photo:
             # Download the photo to the server
             photo = message.photo
-            downloaded_photo_path = os.path.join(PHOTO_STORAGE_DIR, f"{photo.file_id}.jpg")
+            downloaded_photo_path = os.path.join(f"{photo.file_id}.jpg")
             await message.download(downloaded_photo_path)
             
             # Save the path of the downloaded photo
